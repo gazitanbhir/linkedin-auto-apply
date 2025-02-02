@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Job Matcher</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; text-align: center; }
+        #job-results { margin-top: 20px; display: none; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin: 10px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h2>Upload Your Resume (PDF) to Find Matching Jobs</h2>
+    <input type="file" id="pdfUpload" accept="application/pdf">
+    <button onclick="uploadPDF()">Upload & Find Jobs</button>
+    <div id="loading" style="display:none;">Searching for jobs...</div>
+    <div id="job-results">
+        <h3>Matching Jobs:</h3>
+        <ul id="job-list"></ul>
+    </div>
+    
+    <script>
+async function uploadPDF() {
+    const fileInput = document.getElementById('pdfUpload');
+    const file = fileInput.files[0];
+    if (!file) {
+        alert("Please select a PDF file.");
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("pdf_file", file);
+    
+    document.getElementById('loading').style.display = 'block';
+    document.getElementById('job-results').style.display = 'none';
+
+    try {
+        const response = await fetch("http://localhost:8000/find-matching-jobs", {
+            method: "POST",
+            body: formData
+        });
+        const data = await response.json();
+        document.getElementById('loading').style.display = 'none';
+        
+        if (response.ok && data.matching_jobs.length > 0) {
+            displayJobs(data.matching_jobs);
+        } else {
+            document.getElementById('job-list').innerHTML = "<p>No matching jobs found.</p>";
+            document.getElementById('job-results').style.display = 'block';
+        }
+    } catch (error) {
+        document.getElementById('loading').style.display = 'none';
+        alert("Failed to upload. Please try again.");
+    }
+}
+
+function displayJobs(jobs) {
+    const jobList = document.getElementById('job-list');
+    jobList.innerHTML = "";
+    jobs.forEach(job => {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${job.title}</strong> at ${job.company} <br> <a href="${job.link}" target="_blank">View Job</a>`;
+        jobList.appendChild(li);
+    });
+    document.getElementById('job-results').style.display = 'block';
+}
+
+    </script>
+</body>
+</html>
